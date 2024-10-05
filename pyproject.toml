@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "demo-games"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Zhu <rzhu0812@gmail.com>", "Issac Liu <issac@matchatea.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pgzero = "^1.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
