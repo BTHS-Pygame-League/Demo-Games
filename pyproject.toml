@@ -4,11 +4,11 @@ version = "0.1.0"
 description = ""
 authors = ["Ryan Zhu <rzhu0812@gmail.com>", "Issac Liu <issac@matchatea.dev>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"
 pgzero = "^1.2.1"
-
 
 [build-system]
 requires = ["poetry-core"]
