@@ -1,53 +1,70 @@
-import pgzrun
+import pygame
 import random
 import time
 
+# Initialize Pygame
+pygame.init()
+
+# Constants
 WIDTH = 800
 HEIGHT = 600
 PLAYER_SIZE = 25
 PLAYER_SPEED = 5
 
+# Screen setup
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Dodge the Laser")
+
+# Colors
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
+WHITE = (255, 255, 255)
+
+# Game variables
 player_x = WIDTH // 2 - PLAYER_SIZE // 2
 player_y = HEIGHT // 2 - PLAYER_SIZE // 2
 game_over = False
 score = 0
 lasers = []
 
+# Player class
 class Player:
     def __init__(self, x, y, size, speed):
         self.x = x
         self.y = y
         self.size = size
         self.speed = speed
-        self.color = "green"
+        self.color = GREEN
     
     def draw(self):
-        screen.draw.filled_rect(self.hitbox(), self.color)
+        pygame.draw.rect(screen, self.color, self.hitbox())
     
-    def move(self):
+    def move(self, keys):
         if not game_over:
-            if keyboard.left or keyboard.a:
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 self.x -= PLAYER_SPEED
-            if keyboard.right or keyboard.d:
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 self.x += PLAYER_SPEED
-            if keyboard.up or keyboard.w:
+            if keys[pygame.K_UP] or keys[pygame.K_w]:
                 self.y -= PLAYER_SPEED
-            if keyboard.down or keyboard.s:
+            if keys[pygame.K_DOWN] or keys[pygame.K_s]:
                 self.y += PLAYER_SPEED
 
             self.x = max(0, min(WIDTH - self.size, self.x))
             self.y = max(0, min(HEIGHT - self.size, self.y))
     
     def hitbox(self):
-        return Rect((self.x, self.y), (self.size, self.size))
+        return pygame.Rect(self.x, self.y, self.size, self.size)
 
-class Laser():
+# Laser class
+class Laser:
     def __init__(self, x, y, width, height):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.color = "red"
+        self.color = RED
         self.active = False
         self.active_start = 0
         self.warning = 0
@@ -55,10 +72,10 @@ class Laser():
     
     def draw(self):
         if self.active:
-            screen.draw.filled_rect(self.hitbox(), self.color)
+            pygame.draw.rect(screen, self.color, self.hitbox())
         elif time.time() - self.warning < self.warning_duration:
             if int((time.time() - self.warning) * 10) % 2 == 0:
-                screen.draw.filled_rect(self.hitbox(), "yellow")
+                pygame.draw.rect(screen, YELLOW, self.hitbox())
     
     def update(self):
         if not self.active and time.time() - self.warning >= self.warning_duration:
@@ -70,13 +87,15 @@ class Laser():
         return True
         
     def hitbox(self):
-        return Rect((self.x, self.y), (self.width, self.height))
+        return pygame.Rect(self.x, self.y, self.width, self.height)
 
     def start_warning(self):
         self.warning = time.time()
 
+# Initialize player
 player = Player(player_x, player_y, PLAYER_SIZE, PLAYER_SPEED)
 
+# Function to spawn lasers
 def spawn_laser():
     for _ in range((score // 10) + 1):
         laser_type = random.choice(["Horizontal", "Vertical"])
@@ -89,24 +108,29 @@ def spawn_laser():
         laser.start_warning()
         lasers.append(laser)
 
+# Function to draw everything
 def draw():
-    screen.clear()
+    screen.fill((0, 0, 0))
     player.draw()
     
     for laser in lasers:
         laser.draw()
     
-    screen.draw.text(str(score), center=(WIDTH//2, 25), fontsize=30, color="white")
+    score_text = pygame.font.SysFont(None, 30).render(str(score), True, WHITE)
+    screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, 25))
     
     if game_over:
-        screen.draw.text("GAME OVER", center=(WIDTH//2, HEIGHT//2), fontsize=60, color="white")
+        game_over_text = pygame.font.SysFont(None, 60).render("GAME OVER", True, WHITE)
+        screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//2 - game_over_text.get_height()//2))
 
+# Function to update game state
 def update():
-    global score
+    global score, game_over
     first_laser = True
     
     if not game_over:
-        player.move()
+        keys = pygame.key.get_pressed()
+        player.move(keys)
         
         for laser in lasers[:]:
             if not laser.update():
@@ -117,16 +141,22 @@ def update():
         
         for laser in lasers:
             if laser.active and player.hitbox().colliderect(laser.hitbox()):
-                end_game()
+                game_over = True
 
-def end_game():
-    global game_over
-    game_over = True
-    clock.unschedule(spawn_laser)
+# Main game loop
+clock = pygame.time.Clock()
+spawn_laser_event = pygame.USEREVENT + 1
+pygame.time.set_timer(spawn_laser_event, 2100)
 
-def update_lasers():
-    spawn_laser()
-
-clock.schedule_interval(spawn_laser, 2.1)
-
-pgzrun.go()
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        elif event.type == spawn_laser_event:
+            spawn_laser()
+    
+    update()
+    draw()
+    pygame.display.flip()
+    clock.tick(60)
